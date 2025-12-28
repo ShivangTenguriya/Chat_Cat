@@ -8,6 +8,7 @@ import psycopg2.extras
 load_dotenv()  
 
 app = Flask(__name__)
+secret_key=os.getenv("secret_key"),
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 
