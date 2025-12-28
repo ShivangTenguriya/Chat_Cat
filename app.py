@@ -11,6 +11,8 @@ app = Flask(__name__)
 app.secret_key=os.getenv("secret_key")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+app.config['SESSION_COOKIE_SECURE'] = True     
+app.config['SESSION_COOKIE_HTTPONLY'] = True  
 
 DB_PARAMS = {
     "dbname": os.getenv("DB_NAME"),
@@ -27,6 +29,13 @@ def get_db_connection():
 
 connected_users = {}  
 user_sockets = {}     
+
+from flask import session
+
+@app.route('/test_session')
+def test_session():
+    session['test'] = 'ok'
+    return f"Session value: {session.get('test')}"
 
 
 @socketio.on("login")
