@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anonymous 1-to-1 Chat</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #000000d2;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chat-container {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    background: #02768800;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 12px rgb(9, 206, 220);
+}
+
+.chat-header {
+    padding: 15px;
+    background: #008cc0a2;
+    color: white;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; 
+    gap: 10px; 
+}
+
+.chat-logo {
+    width: 40px;           
+    height: 40px;          
+    border-radius: 50%;    
+    object-fit: cover;    
+    border: 2px solid white; 
+}
+
+.header-text {
+    flex: 1;               
+}
+
+
+
+.login-form {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.login-form input,
+.login-form select {
+    padding: 12px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+}
+
+.login-form input:focus,
+.login-form select:focus {
+    border-color: #0084ff;
+}
+
+.login-form button {
+    padding: 12px;
+    background: #04d2f29f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+.login-form button:hover {
+    background: #27b70dcd;
+}
+
+
+.terms-container {
+    margin: 10px 0;
+}
+
+.terms-container label {
+    color: rgb(255, 255, 255);
+    font-size: 14px;
+}
+
+.terms-container label a {
+    color: rgb(255, 255, 255);
+    text-decoration: underline;
+}
+
+.terms-container label a:hover {
+    color: #008cc0;
+}
+
+
+.chat-body {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background: #e5ddd5;
+    display: none;
+}
+
+
+.skip-btn {
+    background-color: #ff4d4d;
+    color: white;
+    margin-left: 6px;
+}
+
+
+.message {
+    max-width: 75%;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    word-break: break-word;
+}
+
+.message.you {
+    background: #02cec7;
+    margin-left: auto;
+    border-bottom-right-radius: 0;
+}
+
+.message.other {
+    background: #ffffffa3;
+    margin-right: auto;
+    border-bottom-left-radius: 0;
+}
+
+
+.chat-input {
+     display: none; 
+     padding: 10px; 
+     background: #f0f0f0; 
+    }
+
+.chat-input input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    outline: none;
+    font-size: 14px;
+}
+
+.chat-input button {
+    margin-left: 10px;
+    padding: 10px 18px;
+    background: #0084ff;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+}
+
+.chat-input button:hover {
+    background: #006edc;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="chat-container">
+    <div class="chat-header" id="header">
+        <img src="static\chat cat.png" alt="Chat Logo" class="chat-logo" />
+        Login
+    </div>
+
+   
+    <form class="login-form" id="loginForm">
+    <input type="text" id="name" placeholder="Nickname" required />
+
+    <input type="number" id="age" placeholder="Age" min="1" required />
+    <div id="ageError" style="color:red; font-size:14px; margin-top:5px; display:none;">
+        You are a minor. This chat is only for users 18+.
+    </div>
+
+    <select id="gender" required>
+        <option value="">Select Gender</option>
+        <option>Male</option>
+        <option>Female</option>
+        <option>Other</option>
+    </select>
+
+    <input type="tel" id="mobile" placeholder="Mobile Number" required />
+    <div id="mobileError" style="color:red; font-size:14px; margin-top:5px; display:none;">
+        Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.
+    </div>
+
+    <!-- Terms & Privacy Checkbox -->
+    <div style="margin: 10px 0;" class="terms-container">
+    <input type="checkbox" id="agreeTerms" />
+    <label for="agreeTerms">
+        I have read and agree to the 
+        <a href="terms.html" target="_blank">Terms & Conditions</a> 
+        and 
+        <a href="privacy.html" target="_blank">Privacy Policy</a>
+    </label>
+    <div id="termsError" style="color:red; font-size:14px; display:none;">
+        You must accept the Terms & Privacy Policy to continue.
+    </div>
+</div>
+
+
+    <button type="submit">Start Chat</button>
+</form>
+
+<div class="chat-body" id="messages"></div>
+    <div class="chat-input" id="chatInput">
+        <input type="text" id="messageInput" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+<script>
+const socket = io(); 
+let myRoom = null;
+let replyTo = null;
+let lastDate = "";
+let unreadCount = 0;
+
+
+const loginForm = document.getElementById("loginForm");
+const nameInput = document.getElementById("name");
+const ageInput = document.getElementById("age");
+const genderInput = document.getElementById("gender");
+const mobileInput = document.getElementById("mobile");
+const header = document.getElementById("header");
+const messagesBox = document.getElementById("messages");
+const chatInputContainer = document.getElementById("chatInput");
+const messageInput = document.getElementById("messageInput");
+
+
+
+document.getElementById("age").addEventListener("input", function () {
+    const ageError = document.getElementById("ageError");
+    ageError.style.display = this.value && this.value < 18 ? "block" : "none";
+});
+
+document.getElementById("mobile").addEventListener("input", function () {
+    const mobileError = document.getElementById("mobileError");
+    mobileError.style.display = isValidMobile(this.value) ? "none" : "block";
+});
+
+
+loginForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const name = nameInput.value.trim();
+    const age = parseInt(ageInput.value, 10);
+    const gender = genderInput.value;
+    const mobile = mobileInput.value.trim();
+    const agreeTerms = document.getElementById("agreeTerms").checked;
+
+    const ageError = document.getElementById("ageError");
+    const mobileError = document.getElementById("mobileError");
+    const termsError = document.getElementById("termsError");
+
+    
+    if (age < 18) {
+        ageError.style.display = "block";
+        mobileError.style.display = "none";
+        termsError.style.display = "none";
+        return;
+    }
+    ageError.style.display = "none";
+
+    
+    if (!isValidMobile(mobile)) {
+        mobileError.style.display = "block";
+        termsError.style.display = "none";
+        return;
+    }
+    mobileError.style.display = "none";
+
+    if (!agreeTerms) {
+        termsError.style.display = "block";
+        return;
+    }
+    termsError.style.display = "none";
+
+    socket.emit("login", { name, age, gender, mobile });
+
+    loginForm.style.display = "none";
+    header.innerText = "Waiting for a partner...";
+});
+
+
+
+function isValidMobile(number) {
+    if (!/^[6-9][0-9]{9}$/.test(number)) return false;
+    if (/^(\d)\1{9}$/.test(number)) return false;
+
+    return true;
+}
+
+
+
+function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text || !myRoom) return;
+
+    const timestamp = new Date().toLocaleTimeString();
+    addMessage("you", text, timestamp, replyTo, "sent");
+
+    socket.emit("sendMessage", { 
+        room: myRoom, 
+        text, 
+        replyText: replyTo,
+        timestamp
+    });
+
+    messageInput.value = "";
+    replyTo = null;
+}
+
+messageInput.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        sendMessage();
+    }
+});
+
+
+function addMessage(type, text, timestamp = null, replyText = null, status = null, reactions = {}) {
+    const currentDate = new Date().toDateString();
+    if(currentDate !== lastDate){
+        const dateDiv = document.createElement("div");
+        dateDiv.innerText = (currentDate === new Date().toDateString()) ? "Today" : currentDate;
+        dateDiv.style.textAlign = "center";
+        dateDiv.style.color = "#777";
+        messagesBox.appendChild(dateDiv);
+        lastDate = currentDate;
+    }
+
+    const div = document.createElement("div");
+    div.className = "message " + type;
+
+    let content = "";
+    if (replyText) {
+        content += `Replying to: "${replyText}"\n`;
+    }
+    content += text;
+    div.innerText = content;
+
+    const timeSpan = document.createElement("span");
+    timeSpan.style.display = "block";
+    timeSpan.style.fontSize = "10px";
+    timeSpan.style.color = "#555";
+    timeSpan.style.marginTop = "4px";
+    timeSpan.innerText = timestamp || new Date().toLocaleTimeString();
+    div.appendChild(timeSpan);
+
+    if (status && type === "you") {
+        const statusSpan = document.createElement("span");
+        statusSpan.style.fontSize = "10px";
+        statusSpan.style.color = "#777";
+        statusSpan.style.marginLeft = "6px";
+        statusSpan.innerText = status;
+        div.appendChild(statusSpan);
+    }
+
+    const reactionsDiv = document.createElement("div");
+    reactionsDiv.className = "reactions";
+    reactionsDiv.style.fontSize = "12px";
+    reactionsDiv.style.marginTop = "4px";
+    for (const r in reactions) {
+        if (reactions[r] > 0) reactionsDiv.innerText += `${r} ${reactions[r]}  `;
+    }
+    div.appendChild(reactionsDiv);
+
+    messagesBox.appendChild(div);
+    messagesBox.scrollTop = messagesBox.scrollHeight;
+
+   
+    if (type === "you") {
+        div.style.cursor = "pointer";
+        div.onclick = () => {
+            replyTo = text;
+            messageInput.focus();
+        };
+    }
+}
+
+
+socket.on("waiting", (data) => {
+    header.innerText = data.message;
+});
+
+socket.on("login_error", (data) => {
+    alert(data.message);
+    loginForm.style.display = "flex";
+    header.innerText = "Login";
+});
+
+socket.on("chat_started", (data) => {
+    myRoom = data.room;
+    header.innerText = "Chatting with: " + data.partner_name;
+
+    messagesBox.style.display = "block";
+    chatInputContainer.style.display = "flex";
+    addMessage("other", "You are now connected!");
+});
+
+socket.on("receiveMessage", (data) => {
+    addMessage("other", data.text, data.timestamp, data.replyText, "delivered", data.reactions || {});
+    socket.emit("message_seen", { room: myRoom, text: data.text });
+});
+
+socket.on("message_status_update", (data) => {
+});
+
+socket.on("partner_disconnected", (data) => {
+    addMessage("other", data.message);
+    myRoom = null; 
+    chatInputContainer.style.display = "none";
+    header.innerText = "Waiting for a new partner...";
+});
+
+
+socket.on("typing", () => {
+    header.innerText = "Partner is typing...";
+    setTimeout(() => {
+        header.innerText = myRoom ? `Chatting with: partner` : "Waiting for partner...";
+    }, 1500);
+});
+
+
+messageInput.addEventListener("input", () => {
+    socket.emit("typing", { room: myRoom });
+});
+
+
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+        unreadCount = 0;
+        document.title = "Anonymous Chat";
+    }
+});
+
+socket.on("receiveMessage", (data) => {
+    if (document.hidden) {
+        unreadCount++;
+        document.title = `(${unreadCount}) New Messages`;
+    }
+});
+
+
+socket.on("update_reactions", (data) => {
+    const { message, reactions } = data;
+    const divs = messagesBox.getElementsByClassName("message");
+    for (let div of divs) {
+        if (div.innerText.includes(message)) {
+            let reactionsDiv = div.querySelector(".reactions");
+            if (!reactionsDiv) {
+                reactionsDiv = document.createElement("div");
+                reactionsDiv.className = "reactions";
+                reactionsDiv.style.fontSize = "12px";
+                reactionsDiv.style.marginTop = "4px";
+                div.appendChild(reactionsDiv);
+            }
+            let text = "";
+            for (const r in reactions) {
+                if (reactions[r] > 0) text += `${r} ${reactions[r]}  `;
+            }
+            reactionsDiv.innerText = text;
+            break;
+        }
+    }
+});
+
+
+function skipPartner() {
+    socket.emit("skip_partner", { room: myRoom });
+    myRoom = null;
+    chatInputContainer.style.display = "none";
+    header.innerText = "Finding new partner...";
+}
+
+
+window.addEventListener("beforeunload", function() {
+    if (socket.connected) {
+        socket.disconnect();
+    }
+});
+</script>
+
+
+
+</body>
+</html>
