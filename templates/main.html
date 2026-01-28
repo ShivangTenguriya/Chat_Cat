@@ -1,517 +1,343 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anonymous 1-to-1 Chat</title>
-
-<style>
-* {
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
-
+    <title>Chat Cat Server</title>
+    <style>
 body {
     margin: 0;
-    background: #000000d2;
-    height: 100vh;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f2f2f2;
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100vh;
+    transition: background 0.3s;
 }
+body.dark { background: #121212; }
 
 .chat-container {
-    width: 100%;
-    max-width: 420px;
-    height: 100vh;
-    background: #02768800;
+    width: 400px;
+    height: 600px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
-    box-shadow: 0 0 12px rgb(9, 206, 220);
+    overflow: hidden;
+    transition: background 0.3s;
 }
+body.dark .chat-container { background: #1e1e1e; }
 
 .chat-header {
-    padding: 15px;
-    background: #008cc0a2;
-    color: white;
-    text-align: center;
-    font-size: 18px;
-    font-weight: bold;
     display: flex;
     align-items: center;
-    justify-content: flex-start; 
-    gap: 10px; 
+    padding: 10px 15px;
+    background-color: #1056a6;
+    color: #fff;
+    font-weight: bold;
+    border-radius: 10px 10px 0 0;
+    justify-content: space-between;
 }
+body.dark .chat-header { background: #1e1e1e; }
 
 .chat-logo {
-    width: 40px;           
-    height: 40px;          
-    border-radius: 50%;    
-    object-fit: cover;    
-    border: 2px solid white; 
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+    border: 2px solid #fff;
 }
+.chat-title { font-size: 18px; font-weight: bold; flex:1; }
 
-.header-text {
-    flex: 1;               
+.mode-btn {
+    background: transparent;
+    border: 1px solid #fff;
+    border-radius: 5px;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 3px 6px;
 }
-
-
+.mode-btn:hover { background: rgba(255,255,255,0.2); }
 
 .login-form {
-    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    padding: 20px;
+    flex: 1;
 }
-
 .login-form input,
 .login-form select {
-    padding: 12px;
-    font-size: 14px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
     border: 1px solid #ccc;
-    border-radius: 6px;
-    outline: none;
+    font-size: 14px;
 }
-
-.login-form input:focus,
-.login-form select:focus {
-    border-color: #0084ff;
-}
-
+body.dark .login-form input,
+body.dark .login-form select { background: #2a2a2a; color: #fff; border-color: #444; }
+.login-form label { font-size: 12px; margin-bottom: 10px; }
 .login-form button {
-    padding: 12px;
-    background: #04d2f29f;
-    color: white;
+    padding: 10px;
     border: none;
-    border-radius: 6px;
-    font-size: 15px;
+    border-radius: 5px;
+    background: #4b6cb7;
+    color: #fff;
+    font-weight: bold;
     cursor: pointer;
 }
+.login-form button:hover { background: #182848; }
 
-.login-form button:hover {
-    background: #27b70dcd;
+#partnerTyping {
+    padding: 5px 15px;
+    font-size: 12px;
+    color: #555;
+    min-height: 18px;
 }
+body.dark #partnerTyping { color: #ccc; }
 
-
-.terms-container {
-    margin: 10px 0;
-}
-
-.terms-container label {
-    color: rgb(255, 255, 255);
-    font-size: 14px;
-}
-
-.terms-container label a {
-    color: rgb(255, 255, 255);
-    text-decoration: underline;
-}
-
-.terms-container label a:hover {
-    color: #008cc0;
-}
-
-
-.chat-body {
+.chat-messages {
     flex: 1;
-    padding: 10px;
+    padding: 15px;
     overflow-y: auto;
-    background: #e5ddd5;
+    background: #f9f9f9;
     display: none;
+    flex-direction: column;
 }
+body.dark .chat-messages { background: #1e1e1e; }
 
-
-.skip-btn {
-    background-color: #ff4d4d;
-    color: white;
-    margin-left: 6px;
-}
-
-
-.message {
-    max-width: 75%;
+.msg {
+    margin-bottom: 4px;
     padding: 10px 14px;
-    margin-bottom: 10px;
-    border-radius: 15px;
+    border-radius: 20px;
+    max-width: 70%;
+    word-wrap: break-word;
     font-size: 14px;
-    word-break: break-word;
+    line-height: 1.4;
+    position: relative;
 }
 
-.message.you {
-    background: #02cec7;
+/* User messages (right) */
+.msg.you {
+    background: linear-gradient(135deg, #5b51d8, #833ab4, #e1306c);
+    color: #fff;
     margin-left: auto;
-    border-bottom-right-radius: 0;
+    text-align: left;
+    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 20px;
 }
+.msg.you + .msg.you { border-top-right-radius: 6px; margin-top: 2px; }
 
-.message.other {
-    background: #ffffffa3;
+/* Other messages (left) */
+.msg.other {
+    background: #efefef;
+    color: #000;
     margin-right: auto;
-    border-bottom-left-radius: 0;
+    text-align: left;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 20px;
 }
+body.dark .msg.other { background: #2a2a2a; color: #fff; }
+.msg.other + .msg.other { border-top-left-radius: 6px; margin-top: 2px; }
 
+.reply-text {
+    font-size: 12px;
+    color: #f98f8f;
+    background: rgba(0,0,0,0.05);
+    padding: 5px 8px;
+    border-left: 3px solid #999;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
 
 .chat-input {
-     display: none; 
-     padding: 10px; 
-     background: #f0f0f0; 
-    }
+    display: none;
+    padding: 10px;
+    background: #eee;
+    border-top: 1px solid #ccc;
+    flex-direction: row;
+}
+body.dark .chat-input { background: #1e1e1e; border-color: #333; }
 
 .chat-input input {
     flex: 1;
-    padding: 12px;
+    padding: 10px;
+    border-radius: 20px;
     border: 1px solid #ccc;
-    border-radius: 25px;
     outline: none;
-    font-size: 14px;
 }
+body.dark .chat-input input { background: #2a2a2a; color: #fff; border-color: #444; }
 
 .chat-input button {
     margin-left: 10px;
-    padding: 10px 18px;
-    background: #0084ff;
-    color: white;
+    padding: 10px 15px;
     border: none;
-    border-radius: 25px;
+    border-radius: 20px;
+    background: #0095f6;
+    color: #fff;
     cursor: pointer;
+    font-weight: bold;
 }
+.chat-input button:hover { background: #0077cc; }
+.skip-btn { background: #e74c3c !important; }
+.skip-btn:hover { background: #c0392b !important; }
 
-.chat-input button:hover {
-    background: #006edc;
-}
-
-</style>
+.chat-messages::-webkit-scrollbar { width: 6px; }
+.chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    </style>
 </head>
-
 <body>
-
 <div class="chat-container">
-    <div class="chat-header" id="header">
-        <img src="static\chat cat.png" alt="Chat Logo" class="chat-logo" />
-        Login
+    <div class="chat-header">
+        <img src="static/chat cat.png" class="chat-logo" alt="Logo">
+        <span class="chat-title">Anonymous Chat</span>
+        <button class="mode-btn" id="modeBtn">Dark Mode</button>
     </div>
 
-   
-    <form class="login-form" id="loginForm">
-    <input type="text" id="name" placeholder="Nickname" required />
+    <!-- Partner typing text below header -->
+    <div id="partnerTyping"></div>
 
-    <input type="number" id="age" placeholder="Age" min="1" required />
-    <div id="ageError" style="color:red; font-size:14px; margin-top:5px; display:none;">
-        You are a minor. This chat is only for users 18+.
+    <form id="loginForm" class="login-form">
+        <input id="nickname" placeholder="Nickname" required>
+        <input id="age" type="number" placeholder="Age" min="18" required>
+        <select id="gender" required>
+            <option value="">Select Gender</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+        </select>
+        <input id="mobile" placeholder="Mobile Number" required>
+        <div style="margin-bottom:15px;">
+            <input type="checkbox" id="agreeTerms">
+            <label for="agreeTerms">I agree to <a href="{{ url_for('terms') }}">Terms & Conditions</a> and <a href="{{ url_for('privacy') }}">Privacy Policy</a></label>
+        </div>
+        <button type="submit">Start Chat</button>
+    </form>
+
+    <div id="messages" class="chat-messages"></div>
+
+    <div id="chatInput" class="chat-input">
+        <input id="text" placeholder="Type a message...">
+        <button id="send">Send</button>
+        <button id="skip" class="skip-btn">Skip</button>
     </div>
-
-    <select id="gender" required>
-        <option value="">Select Gender</option>
-        <option>Male</option>
-        <option>Female</option>
-        <option>Other</option>
-    </select>
-
-    <input type="tel" id="mobile" placeholder="Mobile Number" required />
-    <div id="mobileError" style="color:red; font-size:14px; margin-top:5px; display:none;">
-        Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.
-    </div>
-
-    <!-- Terms & Privacy Checkbox -->
-    <div style="margin: 10px 0;" class="terms-container">
-    <input type="checkbox" id="agreeTerms" />
-    <label for="agreeTerms">
-        I have read and agree to the 
-        <a href="terms.html" target="_blank">Terms & Conditions</a> 
-        and 
-        <a href="privacy.html" target="_blank">Privacy Policy</a>
-    </label>
-    <div id="termsError" style="color:red; font-size:14px; display:none;">
-        You must accept the Terms & Privacy Policy to continue.
-    </div>
-</div>
-
-
-    <button type="submit">Start Chat</button>
-</form>
-
-<div class="chat-body" id="messages"></div>
-    <div class="chat-input" id="chatInput">
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-        <button onclick="sendMessage()">Send</button>
-    </div>
-
 </div>
 
 <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
 <script>
-const socket = io(); 
-let myRoom = null;
+let socket;
 let replyTo = null;
-let lastDate = "";
-let unreadCount = 0;
-
+let typingTimeout;
 
 const loginForm = document.getElementById("loginForm");
-const nameInput = document.getElementById("name");
-const ageInput = document.getElementById("age");
-const genderInput = document.getElementById("gender");
-const mobileInput = document.getElementById("mobile");
-const header = document.getElementById("header");
-const messagesBox = document.getElementById("messages");
-const chatInputContainer = document.getElementById("chatInput");
-const messageInput = document.getElementById("messageInput");
+const header = document.querySelector(".chat-title");
+const messages = document.getElementById("messages");
+const chatInput = document.getElementById("chatInput");
+const modeBtn = document.getElementById("modeBtn");
+const partnerTyping = document.getElementById("partnerTyping");
 
+modeBtn.onclick = ()=>{
+    document.body.classList.toggle("dark");
+    modeBtn.innerText = document.body.classList.contains("dark") ? "Light Mode" : "Dark Mode";
+};
 
+function validMobile(num){ return /^[6-9][0-9]{9}$/.test(num); }
 
-document.getElementById("age").addEventListener("input", function () {
-    const ageError = document.getElementById("ageError");
-    ageError.style.display = this.value && this.value < 18 ? "block" : "none";
-});
-
-document.getElementById("mobile").addEventListener("input", function () {
-    const mobileError = document.getElementById("mobileError");
-    mobileError.style.display = isValidMobile(this.value) ? "none" : "block";
-});
-
-
-loginForm.addEventListener("submit", function (e) {
+loginForm.onsubmit = async e => {
     e.preventDefault();
+    const nickname = document.getElementById("nickname").value.trim();
+    const age = parseInt(document.getElementById("age").value);
+    const gender = document.getElementById("gender").value;
+    const mobile = document.getElementById("mobile").value.trim();
+    const agree = document.getElementById("agreeTerms").checked;
+    if(age < 18){ alert("Age must be 18+"); return; }
+    if(!validMobile(mobile)){ alert("Invalid mobile number"); return; }
+    if(!nickname || !gender){ alert("All fields required"); return; }
+    if(!agree){ alert("You must accept Terms & Privacy Policy"); return; }
 
-    const name = nameInput.value.trim();
-    const age = parseInt(ageInput.value, 10);
-    const gender = genderInput.value;
-    const mobile = mobileInput.value.trim();
-    const agreeTerms = document.getElementById("agreeTerms").checked;
-
-    const ageError = document.getElementById("ageError");
-    const mobileError = document.getElementById("mobileError");
-    const termsError = document.getElementById("termsError");
-
-    
-    if (age < 18) {
-        ageError.style.display = "block";
-        mobileError.style.display = "none";
-        termsError.style.display = "none";
-        return;
-    }
-    ageError.style.display = "none";
-
-    
-    if (!isValidMobile(mobile)) {
-        mobileError.style.display = "block";
-        termsError.style.display = "none";
-        return;
-    }
-    mobileError.style.display = "none";
-
-    if (!agreeTerms) {
-        termsError.style.display = "block";
-        return;
-    }
-    termsError.style.display = "none";
-
-    socket.emit("login", { name, age, gender, mobile });
+    const res = await fetch("/login", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        credentials:"include",
+        body: JSON.stringify({nickname, age, gender, mobile})
+    });
+    const data = await res.json();
+    if(!res.ok){ alert(data.error); return; }
 
     loginForm.style.display = "none";
-    header.innerText = "Waiting for a partner...";
-});
-
-
-
-function isValidMobile(number) {
-    if (!/^[6-9][0-9]{9}$/.test(number)) return false;
-    if (/^(\d)\1{9}$/.test(number)) return false;
-
-    return true;
-}
-
-
-
-function sendMessage() {
-    const text = messageInput.value.trim();
-    if (!text || !myRoom) return;
-
-    const timestamp = new Date().toLocaleTimeString();
-    addMessage("you", text, timestamp, replyTo, "sent");
-
-    socket.emit("sendMessage", { 
-        room: myRoom, 
-        text, 
-        replyText: replyTo,
-        timestamp
+    socket = io({ withCredentials:true });
+    socket.on("connect", ()=> socket.emit("login"));
+    socket.on("waiting", d => header.innerText = d.message);
+    socket.on("chat_started", ()=>{
+        header.innerText = "Chatting anonymously";
+        chatInput.style.display = "flex";
+        messages.style.display = "flex";
     });
 
-    messageInput.value = "";
+    // Receive message
+    socket.on("receiveMessage", d => {
+        partnerTyping.innerText = ""; // hide typing
+        addMessage("other", d.text, d.replyText);
+    });
+
+    // Partner typing
+    socket.on("partner_typing", () => {
+        partnerTyping.innerText = "Partner is typing...";
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => { partnerTyping.innerText = ""; }, 1500);
+    });
+
+    // Partner disconnected
+    socket.on("partner_disconnected", d=>{
+        partnerTyping.innerText = "";
+        addMessage("other", d.message);
+        chatInput.style.display="none";
+    });
+};
+
+// Send message
+document.getElementById("send").onclick = ()=>{
+    const input = document.getElementById("text");
+    const msg = input.value.trim();
+    if(!msg) return; // prevent spaces-only
+    addMessage("you", msg, replyTo);
+    socket.emit("sendMessage",{text:msg,replyText:replyTo,timestamp:new Date().toLocaleTimeString()});
+    input.value="";
     replyTo = null;
-}
+};
 
-messageInput.addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-        e.preventDefault();
-        sendMessage();
-    }
+// Skip button
+document.getElementById("skip").onclick = ()=>{
+    socket.emit("skip_partner");
+    chatInput.style.display="none";
+};
+
+// Emit typing event
+document.getElementById("text").addEventListener("input", ()=>{
+    if(socket) socket.emit("typing");
 });
 
-
-function addMessage(type, text, timestamp = null, replyText = null, status = null, reactions = {}) {
-    const currentDate = new Date().toDateString();
-    if(currentDate !== lastDate){
-        const dateDiv = document.createElement("div");
-        dateDiv.innerText = (currentDate === new Date().toDateString()) ? "Today" : currentDate;
-        dateDiv.style.textAlign = "center";
-        dateDiv.style.color = "#777";
-        messagesBox.appendChild(dateDiv);
-        lastDate = currentDate;
-    }
-
+// Add message
+function addMessage(type, text, reply){
     const div = document.createElement("div");
-    div.className = "message " + type;
-
-    let content = "";
-    if (replyText) {
-        content += `Replying to: "${replyText}"\n`;
+    div.className = "msg " + type;
+    if(reply){
+        const replyDiv = document.createElement("div");
+        replyDiv.className = "reply-text";
+        replyDiv.innerText = reply;
+        div.appendChild(replyDiv);
     }
-    content += text;
-    div.innerText = content;
-
-    const timeSpan = document.createElement("span");
-    timeSpan.style.display = "block";
-    timeSpan.style.fontSize = "10px";
-    timeSpan.style.color = "#555";
-    timeSpan.style.marginTop = "4px";
-    timeSpan.innerText = timestamp || new Date().toLocaleTimeString();
-    div.appendChild(timeSpan);
-
-    if (status && type === "you") {
-        const statusSpan = document.createElement("span");
-        statusSpan.style.fontSize = "10px";
-        statusSpan.style.color = "#777";
-        statusSpan.style.marginLeft = "6px";
-        statusSpan.innerText = status;
-        div.appendChild(statusSpan);
+    const textNode = document.createTextNode(text);
+    div.appendChild(textNode);
+    if(type === "other"){ 
+        div.onclick = () => { replyTo = text; alert("Replying to: " + text); }; 
     }
-
-    const reactionsDiv = document.createElement("div");
-    reactionsDiv.className = "reactions";
-    reactionsDiv.style.fontSize = "12px";
-    reactionsDiv.style.marginTop = "4px";
-    for (const r in reactions) {
-        if (reactions[r] > 0) reactionsDiv.innerText += `${r} ${reactions[r]}  `;
-    }
-    div.appendChild(reactionsDiv);
-
-    messagesBox.appendChild(div);
-    messagesBox.scrollTop = messagesBox.scrollHeight;
-
-   
-    if (type === "you") {
-        div.style.cursor = "pointer";
-        div.onclick = () => {
-            replyTo = text;
-            messageInput.focus();
-        };
-    }
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
 }
-
-
-socket.on("waiting", (data) => {
-    header.innerText = data.message;
-});
-
-socket.on("login_error", (data) => {
-    alert(data.message);
-    loginForm.style.display = "flex";
-    header.innerText = "Login";
-});
-
-socket.on("chat_started", (data) => {
-    myRoom = data.room;
-    header.innerText = "Chatting with: " + data.partner_name;
-
-    messagesBox.style.display = "block";
-    chatInputContainer.style.display = "flex";
-    addMessage("other", "You are now connected!");
-});
-
-socket.on("receiveMessage", (data) => {
-    addMessage("other", data.text, data.timestamp, data.replyText, "delivered", data.reactions || {});
-    socket.emit("message_seen", { room: myRoom, text: data.text });
-});
-
-socket.on("message_status_update", (data) => {
-});
-
-socket.on("partner_disconnected", (data) => {
-    addMessage("other", data.message);
-    myRoom = null; 
-    chatInputContainer.style.display = "none";
-    header.innerText = "Waiting for a new partner...";
-});
-
-
-socket.on("typing", () => {
-    header.innerText = "Partner is typing...";
-    setTimeout(() => {
-        header.innerText = myRoom ? `Chatting with: partner` : "Waiting for partner...";
-    }, 1500);
-});
-
-
-messageInput.addEventListener("input", () => {
-    socket.emit("typing", { room: myRoom });
-});
-
-
-document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-        unreadCount = 0;
-        document.title = "Anonymous Chat";
-    }
-});
-
-socket.on("receiveMessage", (data) => {
-    if (document.hidden) {
-        unreadCount++;
-        document.title = `(${unreadCount}) New Messages`;
-    }
-});
-
-
-socket.on("update_reactions", (data) => {
-    const { message, reactions } = data;
-    const divs = messagesBox.getElementsByClassName("message");
-    for (let div of divs) {
-        if (div.innerText.includes(message)) {
-            let reactionsDiv = div.querySelector(".reactions");
-            if (!reactionsDiv) {
-                reactionsDiv = document.createElement("div");
-                reactionsDiv.className = "reactions";
-                reactionsDiv.style.fontSize = "12px";
-                reactionsDiv.style.marginTop = "4px";
-                div.appendChild(reactionsDiv);
-            }
-            let text = "";
-            for (const r in reactions) {
-                if (reactions[r] > 0) text += `${r} ${reactions[r]}  `;
-            }
-            reactionsDiv.innerText = text;
-            break;
-        }
-    }
-});
-
-
-function skipPartner() {
-    socket.emit("skip_partner", { room: myRoom });
-    myRoom = null;
-    chatInputContainer.style.display = "none";
-    header.innerText = "Finding new partner...";
-}
-
-
-window.addEventListener("beforeunload", function() {
-    if (socket.connected) {
-        socket.disconnect();
-    }
-});
 </script>
-
-
-
 </body>
 </html>
